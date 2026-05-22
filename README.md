@@ -30,10 +30,40 @@ Despite extensive research on mTOR inhibitors, global proteomic shifts and speci
 
 
 ## Raw data
+Since the raw FASTQ data is proprietary and stored locally, you need to place your raw `.fastq.bz2` files into the `raw_data/` directory before running the pipeline.
 
+The reference transcriptome file `gencode.v44.transcripts.fa` is not included in this repository due to size constraints. You must download it directly from the [GENCODE website](https://gencodegenes.org) and place it in the project root directory before running the script.
 
 ## Workflow
+### 1. RNA-seq Data Preprocessing
+
+The preprocessing pipeline is automated via a Bash script and performs the following steps:
+1. **Decompression & Conversion**: Converts `.fastq.bz2` files to `.fastq.gz` using parallel processing (`pbzip2` and `pigz`).
+2. **Quality Control**: Runs `FastQC` to evaluate the initial quality of the raw sequenced reads.
+3. **Trimming**: Uses `fastp` to perform automated adapter detection, sliding-window quality trimming (cutting front/tail if mean quality < 20), and filtering out short reads (< 36 bp).
+
+## 2. Transcriptome Pseudoalignment & Quantification
+
+To quantify transcript abundances, we use **Kallisto** for fast pseudoalignment. This step maps the trimmed paired-end reads to the reference transcriptome and generates estimated count matrices.
+
+The script performs two main steps:
+1. **Index Generation**: Builds a Kallisto index (`transcripts.idx`) from the reference FASTA file (`gencode.v44.transcripts.fa`), if it does not already exist.
+2. **Abundance Quantification**: Runs `kallisto quant` in a loop across all processed samples. 
+
+Each sample produces an independent directory containing an `abundance.tsv` file, where transcript abundances are reported in **estimated counts** and **TPM** (Transcripts Per Million). These individual tables are subsequently imported and aggregated downstream in R (using packages like `tximport`).
 
 
-## R dependencies
+### Usage
+To execute the bash code, run the following command from the project root:
+```bash
+chmod +x scripts/preprocessing/SCRIPT
+./scripts/preprocessing/SCRIPT
+```
 
+
+### Dependencies
+Ensure the following tools are installed and available in your `PATH`:
+* `pbzip2` (v1.1.13)
+* `FastQC` (v0.11.9 or higher)
+* `fastp` (v0.23.2 or higher v1.0.1)
+* kallisto                     0.51.1
