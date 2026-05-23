@@ -42,7 +42,7 @@ The preprocessing pipeline is automated via a Bash script and performs the follo
 2. **Quality Control**: Runs `FastQC` to evaluate the initial quality of the raw sequenced reads.
 3. **Trimming**: Uses `fastp` to perform automated adapter detection, sliding-window quality trimming (cutting front/tail if mean quality < 20), and filtering out short reads (< 36 bp).
 
-## 2. Transcriptome Pseudoalignment & Quantification
+### 2. Transcriptome Pseudoalignment & Quantification
 
 To quantify transcript abundances, we use **Kallisto** for fast pseudoalignment. This step maps the trimmed paired-end reads to the reference transcriptome and generates estimated count matrices.
 
@@ -52,14 +52,38 @@ The script performs two main steps:
 
 Each sample produces an independent directory containing an `abundance.tsv` file, where transcript abundances are reported in **estimated counts** and **TPM** (Transcripts Per Million). These individual tables are subsequently imported and aggregated downstream in R (using packages like `tximport`).
 
+### Genome Alignment & Alternative Splicing Analysis
 
-### Usage
+To study post-transcriptional alterations during the transition into cancer dormancy, we evaluate changes in alternative splicing. Genome alignment is performed using **HISAT2** against the **GRCh38** human genome assembly (GENCODE Release 44). Downstream alternative splicing events are quantified using **rMATS (RNA-Seq Multivariate Analysis of Transcript Splicing)**, which is the gold standard tool for this task.
+
+### Splicing Events Evaluated
+rMATS comprehensively detects and analyzes five primary types of alternative splicing events:
+* **SE**: Skipped Exon
+* **RI**: Retained Intron
+* **MXE**: Mutually Exclusive Exons
+* **A5SS**: Alternative 5' Splice Site
+* **A3SS**: Alternative 3' Splice Site
+
+The pipeline automatically handles variable read lengths (`--variable-read-length`) with a baseline reference mapping length of 150 bp for paired-end resolution.
+
+
+
+
+## Usage
 To execute the bash code, run the following command from the project root:
 ```bash
 chmod +x scripts/preprocessing/SCRIPT
 ./scripts/preprocessing/SCRIPT
 ```
 
+Before running rMATS, ensure you have the required Conda environment configured and activated:
+
+```bash
+# Create and activate rMATS environment
+conda create -n rmats_env python=3.12 -y
+conda activate rmats_env
+conda install -c bioconda rmats -y
+```
 
 ### Dependencies
 Ensure the following tools are installed and available in your `PATH`:
@@ -67,3 +91,6 @@ Ensure the following tools are installed and available in your `PATH`:
 * `FastQC` (v0.11.9 or higher)
 * `fastp` (v0.23.2 or higher v1.0.1)
 * kallisto                     0.51.1
+* `HISAT2` (v2.2.1 or higher)
+* `Samtools` (v1.13 or higher)
+* `rMATS` (v4.1.2 or higher)
