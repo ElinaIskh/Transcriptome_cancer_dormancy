@@ -19,7 +19,7 @@ library(here) # For platform-independent, relative paths
 
 # Create output folders if they do not exist
 mkdir_if_missing <- function(path) if(!dir.exists(path)) dir.create(path, recursive = TRUE)
-mkdir_if_missing(here("results", "tables"))
+mkdir_if_missing(here("results", "differential_expression"))
 mkdir_if_missing(here("plots"))
 
 
@@ -142,7 +142,7 @@ new_order <- c("gene_name", "gene_id", "baseMean", "log2FoldChange", "lfcSE", "s
 res_annot <- res_annot[, new_order]
 
 # Save final annotated table
-output_table_path <- here("results", "tables", "differential_expression_results.tsv")
+output_table_path <- here("results", "differential_expression", "differential_expression_results.tsv")
 write.table(res_annot, file = output_table_path, sep = "\t", row.names = FALSE, quote = FALSE)
 
 echo(paste("Analysis complete! Annotated results saved to:", output_table_path))
