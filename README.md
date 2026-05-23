@@ -21,7 +21,7 @@ Despite extensive research on mTOR inhibitors, global proteomic shifts and speci
 **Aim**: To perform an integrative multi-omics analysis to elucidate the transcriptomic and proteomic landscape of cancer cells during the transition into dormancy induced by mTOR inhibition.
 
 **Objectives**:
-1. **Characterize differential gene expression **and key transcriptomic signatures of dormant cancer cells following mTOR inhibition.
+1. **Characterize differential gene expression** and key transcriptomic signatures of dormant cancer cells following mTOR inhibition.
 2. Evaluate **alterations in alternative splicing** patterns associated with the dormancy phenotype. 
 3. **Profile the proteome of dormant cancer cells** using mass spectrometry data to identify differentially abundant proteins. 
 4. **Perform integrative analysis to correlate** transcriptomic shifts with proteomic data.
@@ -39,10 +39,12 @@ Despite extensive research on mTOR inhibitors, global proteomic shifts and speci
 │   ├── 03_hisat2_and_rmats.sh     <- Genome mapping and Alternative Splicing analysis via rMATS
 │   ├── 04_deseq2_analysis.R       <- Differential Gene Expression (DGE) analysis via DESeq2
 │   ├── 05_functional_enrichment.R <- ORA (GO, KEGG) and GSEA (MSigDB Hallmarks) on DEGs
-│   └── 06_splicing_analysis.R     <- Alternative Splicing evaluation (maser) and DEG integration
+|   ├── 06_splicing_analysis.R     <- Alternative Splicing evaluation (maser) and DEG integration
+│   └── 07_proteome_and_integration.R  <- Proteom analisys and RNA-proteom integration
 ├── results/                   <- Processed data matrices and outcomes
 │   ├── rmats/                     <- Alternative splicing events 
-│   └── differential_expression/   <- DESeq2 output data
+│   ├── differential_expression/   <- DESeq2 output data
+|   └──                            <- Mass-spectrometry and proteom analysis data
 └── plots/                     <- Quality control and functional figures
 ```
 
@@ -76,6 +78,11 @@ Despite extensive research on mTOR inhibitors, global proteomic shifts and speci
 * **rMATS Integration via maser**: Imports raw Junction Counts (`JC`) from the rMATS workflow and filters high-confidence splicing modifications ($FDR < 0.05$, $|\Delta \text{PSI}| > 0.1$).
 * **Isoform Functional Layering**: Categorizes alternative events into Exon Inclusions vs Exon Skippings and performs multi-cluster GO/KEGG functional profiling.
 * **Dual-Impact Mapping**: Cross-references alternative splicing (AS) modifications against absolute quantitative gene expression patterns (DESeq2 DEGs). Identifies **Dual-Impact genes** (targets simultaneously controlled via transcriptional variance and post-transcriptional splicing wireframe shifts), producing a final comparative functional map.
+
+### 7. Proteomic Subcellular Integration & Timecourse Correlation (`scripts/07_proteome_and_integration.R`)
+* **Subcellular Fractionation Processing**: Normalizes and processes raw spectral count matrices from Cytoplasm and Nucleus proteomic tracking. Computes weekly Expression Kinetics ($\log_2 \text{Fold Change}$) for 1-week, 2-weeks, and 3-weeks updates against baseline controls.
+* **Multi-Omics Congruence**: Cross-references localized proteomic shifts with stationary RNA-Seq targets via regular expression string-parsing of Gene Symbols (`GN=`).
+* **Multi-Layer Heatmaps**: Employs `ComplexHeatmap` to construct split visualization blocks, pinning baseline total RNA shifts directly against 3-week protein clearance/accumulation profiles.
 
 ---
 
@@ -111,4 +118,5 @@ Open your R environment/IDE and run the R scripts in order:
 source("scripts/04_deseq2_analysis.R")
 source("scripts/05_functional_enrichment.R")
 source("scripts/06_splicing_analysis.R")
+source("scripts/07_proteome_and_integration.R")
 ```
