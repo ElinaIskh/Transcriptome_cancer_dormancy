@@ -15,13 +15,13 @@ library(dplyr)
 library(here)
 
 # Create output folders if they do not exist
-if(!dir.exists(here("results", "tables"))) dir.create(here("results", "tables"), recursive = TRUE)
+if(!dir.exists(here("results", "differential_expression"))) dir.create(here("results", "differential_expression"), recursive = TRUE)
 if(!dir.exists(here("plots"))) dir.create(here("plots"), recursive = TRUE)
 
 cat("[INFO] Loading differential expression results...\n")
 
 # 2. Download differential expression results
-deseq_results_path <- here("results", "tables", "differential_expression_results.tsv")
+deseq_results_path <- here("results", "differential_expression", "differential_expression_results.tsv")
 
 if(!file.exists(deseq_results_path)) {
   stop("Error: 'differential_expression_results.tsv' not found! Please run the DESeq2 script first.")
@@ -71,7 +71,7 @@ ego_bp <- enrichGO(
 # Save GO results as table
 if(!is.null(ego_bp) && nrow(ego_bp) > 0) {
   write.table(as.data.frame(ego_bp), 
-              file = here("results", "tables", "go_bp_enrichment_results.tsv"), 
+              file = here("results", "differential_expression", "go_bp_enrichment_results.tsv"), 
               sep = "\t", row.names = FALSE, quote = FALSE)
   
   # Visualise GO: Dotplot
@@ -122,7 +122,7 @@ ekegg <- setReadable(ekegg, OrgDb = org.Hs.eg.db, keyType = "ENTREZID")
 # Save KEGG results as table
 if(!is.null(ekegg) && nrow(ekegg) > 0) {
   write.table(as.data.frame(ekegg), 
-              file = here("results", "tables", "kegg_enrichment_results.tsv"), 
+              file = here("results", "differential_expression", "kegg_enrichment_results.tsv"), 
               sep = "\t", row.names = FALSE, quote = FALSE)
   
   # Visualise KEGG: Dotplot
@@ -174,7 +174,7 @@ if(!is.null(gsea_hallmarks) && nrow(gsea_hallmarks) > 0) {
   
   # Save result as table
   write.table(as.data.frame(gsea_hallmarks), 
-              file = here("results", "tables", "gsea_hallmarks_results.tsv"), 
+              file = here("results", "differential_expression", "gsea_hallmarks_results.tsv"), 
               sep = "\t", row.names = FALSE, quote = FALSE)
   
   # --- Visualise GSEA results ---
