@@ -21,76 +21,94 @@ Despite extensive research on mTOR inhibitors, global proteomic shifts and speci
 **Aim**: To perform an integrative multi-omics analysis to elucidate the transcriptomic and proteomic landscape of cancer cells during the transition into dormancy induced by mTOR inhibition.
 
 **Objectives**:
-1. Characterize differential gene expression and key transcriptomic signatures of dormant cancer cells following mTOR inhibition.
-2. Evaluate alterations in alternative splicing patterns associated with the dormancy phenotype. 
-3. Profile the proteome of dormant cancer cells using mass spectrometry data to identify differentially abundant proteins. 
-4. Perform integrative analysis to correlate transcriptomic shifts with proteomic data.
+1. **Characterize differential gene expression **and key transcriptomic signatures of dormant cancer cells following mTOR inhibition.
+2. Evaluate **alterations in alternative splicing** patterns associated with the dormancy phenotype. 
+3. **Profile the proteome of dormant cancer cells** using mass spectrometry data to identify differentially abundant proteins. 
+4. **Perform integrative analysis to correlate** transcriptomic shifts with proteomic data.
 
+---
 ## Structure of repository
 
-
-## Raw data
-Since the raw FASTQ data is proprietary and stored locally, you need to place your raw `.fastq.bz2` files into the `raw_data/` directory before running the pipeline.
-
-The reference transcriptome file `gencode.v44.transcripts.fa` is not included in this repository due to size constraints. You must download it directly from the [GENCODE website](https://gencodegenes.org) and place it in the project root directory before running the script.
-
-## Workflow
-### 1. RNA-seq Data Preprocessing
-
-The preprocessing pipeline is automated via a Bash script and performs the following steps:
-1. **Decompression & Conversion**: Converts `.fastq.bz2` files to `.fastq.gz` using parallel processing (`pbzip2` and `pigz`).
-2. **Quality Control**: Runs `FastQC` to evaluate the initial quality of the raw sequenced reads.
-3. **Trimming**: Uses `fastp` to perform automated adapter detection, sliding-window quality trimming (cutting front/tail if mean quality < 20), and filtering out short reads (< 36 bp).
-
-### 2. Transcriptome Pseudoalignment & Quantification
-
-To quantify transcript abundances, we use **Kallisto** for fast pseudoalignment. This step maps the trimmed paired-end reads to the reference transcriptome and generates estimated count matrices.
-
-The script performs two main steps:
-1. **Index Generation**: Builds a Kallisto index (`transcripts.idx`) from the reference FASTA file (`gencode.v44.transcripts.fa`), if it does not already exist.
-2. **Abundance Quantification**: Runs `kallisto quant` in a loop across all processed samples. 
-
-Each sample produces an independent directory containing an `abundance.tsv` file, where transcript abundances are reported in **estimated counts** and **TPM** (Transcripts Per Million). These individual tables are subsequently imported and aggregated downstream in R (using packages like `tximport`).
-
-### Genome Alignment & Alternative Splicing Analysis
-
-To study post-transcriptional alterations during the transition into cancer dormancy, we evaluate changes in alternative splicing. Genome alignment is performed using **HISAT2** against the **GRCh38** human genome assembly (GENCODE Release 44). Downstream alternative splicing events are quantified using **rMATS (RNA-Seq Multivariate Analysis of Transcript Splicing)**, which is the gold standard tool for this task.
-
-### Splicing Events Evaluated
-rMATS comprehensively detects and analyzes five primary types of alternative splicing events:
-* **SE**: Skipped Exon
-* **RI**: Retained Intron
-* **MXE**: Mutually Exclusive Exons
-* **A5SS**: Alternative 5' Splice Site
-* **A3SS**: Alternative 3' Splice Site
-
-The pipeline automatically handles variable read lengths (`--variable-read-length`) with a baseline reference mapping length of 150 bp for paired-end resolution.
-
-
-
-
-## Usage
-To execute the bash code, run the following command from the project root:
-```bash
-chmod +x scripts/preprocessing/SCRIPT
-./scripts/preprocessing/SCRIPT
+```text
+├── README.md                  <- Project overview and user guide
+├── .gitignore                 <- Prevents large biological raw data files from being tracked
+├── reference/                 <- Reference genome and GTF annotation (auto-downloaded by script 03)
+├── scripts/                   <- Automated pipeline and analysis scripts
+│   ├── 01_rna_seq_preprocessing.sh <- Raw data conversion, Quality Control, and fastp trimming
+│   ├── 02_kallisto.sh             <- Transcriptome-level pseudoalignment and quantification
+│   ├── 03_hisat2_and_rmats.sh     <- Genome mapping and Alternative Splicing analysis via rMATS
+│   ├── 04_deseq2_analysis.R       <- Differential Gene Expression (DGE) analysis via DESeq2
+│   ├── 05_functional_enrichment.R <- ORA (GO, KEGG) and GSEA (MSigDB Hallmarks) on DEGs
+│   └── 06_splicing_analysis.R     <- Alternative Splicing evaluation (maser) and DEG integration
+├── results/                   <- Processed data matrices and outcomes
+│   ├── rmats/                     <- Alternative splicing events 
+│   └── differential_expression/   <- DESeq2 output data
+└── plots/                     <- Quality control and functional figures
 ```
 
-Before running rMATS, ensure you have the required Conda environment configured and activated:
+## Data Analysis Workflow
 
+### 1. Raw Data Preprocessing (`scripts/01_rna_seq_preprocessing.sh`)
+* Converts raw `.fastq.bz2` files into `.fastq.gz` using parallelized decompression (`pbzip2` and `pigz`).
+* Executes **FastQC** to evaluate baseline sequencing quality metrics.
+* Uses **fastp** to perform automated adapter detection, sliding-window low-quality base cutting (window size 4, mean quality < 20), and filtering of reads shorter than 36 bp.
+
+### 2. Transcriptome Quantification (`scripts/02_kallisto.sh`)
+* Builds a Kallisto index from the reference transcriptome FASTA file.
+* Runs `kallisto quant` in a loop across all processed paired-end samples to estimate transcript abundances in **estimated counts** and **TPM**.
+
+### 3. Genome Alignment & Alternative Splicing (`scripts/03_hisat2_and_rmats.sh`)
+* Automatically downloads the human reference genome assembly and structural annotation (**GENCODE Release 44, GRCh38**).
+* Generates a genomic index and performs read mapping using **HISAT2**, streaming outputs directly to `samtools sort` to yield coordinate-sorted BAM files.
+* Executes **rMATS** to evaluate alternative splicing variations across control vs experimental groups. It captures 5 major events: Skipped Exon (SE), Retained Intron (RI), Mutually Exclusive Exons (MXE), and Alternative 5'/3' Splice Sites (A5SS/A3SS). 
+
+### 4. Differential Gene Expression Analysis (`scripts/04_deseq2_analysis.R`)
+* Imports Kallisto estimated count data (`abundance.h5`) using **tximport**, resolving transcript IDs into gene names via the GENCODE GTF map.
+* Sets up a multi-factor experimental design (`design = ~ cell_line + condition`) to mathematically control for the biological variance and batch effects across distinct cancer cell backgrounds (**A549, T98G, and PA1**).
+* Calculates normalized count transformations via Variance Stabilizing Transformation (**VST**), generates diagnostic **PCA** and sample distance plots, and exports the final sorted table to `results/differential_expression/differential_expression_results.tsv`.
+
+### 5. Functional Enrichment & GSEA (`scripts/05_functional_enrichment.R`)
+* **Over-Representation Analysis (ORA)**: Filters DEGs ($p_{adj} < 0.05$, $|\log_2 FC| > 1$) to identify over-represented Gene Ontology (GO) Biological Processes and KEGG Pathways via `clusterProfiler`.
+* **Gene Set Enrichment Analysis (GSEA)**: Utilizes a non-threshold-based approach by ranking the entire detected transcriptome via a custom metric ($sign(\log_2 FC) \times -\log_{10}(p\text{-value})$).
+* **MSigDB Hallmark Signatures**: Evaluates global phenotypic shifts against the **50 MSigDB Hallmark gene sets** to capture systemic changes (e.g., mTORC1 signaling downregulation, cell-cycle modifications).
+
+### 6. Alternative Splicing Analysis & Multi-Omics Integration (`scripts/06_splicing_analysis.R`)
+* **rMATS Integration via maser**: Imports raw Junction Counts (`JC`) from the rMATS workflow and filters high-confidence splicing modifications ($FDR < 0.05$, $|\Delta \text{PSI}| > 0.1$).
+* **Isoform Functional Layering**: Categorizes alternative events into Exon Inclusions vs Exon Skippings and performs multi-cluster GO/KEGG functional profiling.
+* **Dual-Impact Mapping**: Cross-references alternative splicing (AS) modifications against absolute quantitative gene expression patterns (DESeq2 DEGs). Identifies **Dual-Impact genes** (targets simultaneously controlled via transcriptional variance and post-transcriptional splicing wireframe shifts), producing a final comparative functional map.
+
+---
+
+## Data Availability
+The raw FASTQ sequencing files and intermediate BAM tracks generated during this study are proprietary and currently not publicly available due to upcoming publication pending. 
+
+To maintain transparency and reproducibility without exposing raw files, the pre-calculated alternative splicing matrices (`results/rmats/`) and the final annotated differential gene expression dataset (`results/differential_expression/differential_expression_results.tsv`) **are fully tracked and available directly within this public repository**.
+
+---
+
+## Installation & Execution Guide
+
+### Prerequisites (Conda Environment)
+Ensure you have the required tools installed. You can set up the core upstream environment via Conda:
 ```bash
-# Create and activate rMATS environment
-conda create -n rmats_env python=3.12 -y
-conda activate rmats_env
-conda install -c bioconda rmats -y
+conda create -n cancer_dormancy python=3.12 -y
+conda activate cancer_dormancy
+conda install -c bioconda rmats hisat2 samtools fastqc fastp -y
 ```
 
-### Dependencies
-Ensure the following tools are installed and available in your `PATH`:
-* `pbzip2` (v1.1.13)
-* `FastQC` (v0.11.9 or higher)
-* `fastp` (v0.23.2 or higher v1.0.1)
-* kallisto                     0.51.1
-* `HISAT2` (v2.2.1 or higher)
-* `Samtools` (v1.13 or higher)
-* `rMATS` (v4.1.2 or higher)
+### Running the Upstream Pipelines
+1. Place your raw paired-end sequencing reads into a `raw_data/` folder.
+2. Execute the bash pipelines sequentially:
+   ```bash
+   ./scripts/01_rna_seq_preprocessing.sh
+   ./scripts/02_kallisto.sh
+   ./scripts/03_hisat2_and_rmats.sh
+   ```
+
+### Running the R Downstream Analysis
+Open your R environment/IDE and run the R scripts in order:
+```R
+source("scripts/04_deseq2_analysis.R")
+source("scripts/05_functional_enrichment.R")
+source("scripts/06_splicing_analysis.R")
+```
