@@ -146,3 +146,44 @@ output_table_path <- here("results", "differential_expression", "differential_ex
 write.table(res_annot, file = output_table_path, sep = "\t", row.names = FALSE, quote = FALSE)
 
 echo(paste("Analysis complete! Annotated results saved to:", output_table_path))
+
+
+# 9 Volcano Plot Generation
+echo("Generating Volcano Plot...")
+
+# Count status of diff expression based on log2FoldChange and padj
+res_annot$diffexpressed <- "No"
+res_annot$diffexpressed[res_annot$log2FoldChange > 1 & res_annot$padj < 0.05] <- "Up"
+res_annot$diffexpressed[res_annot$log2FoldChange < -1 & res_annot$padj < 0.05] <- "Down"
+
+# Select top-10 genes based on padj
+top_genes <- res_annot %>% 
+  filter(!is.na(padj)) %>% 
+  arrange(padj) %>% 
+  head(10)
+
+# Build volcano plot 
+volcano_p <- ggplot(data = res_annot, aes(x = log2FoldChange, y = -log10(padj), col = diffexpressed)) +
+  geom_point(alpha = 0.4, size = 1.5) + 
+  theme_minimal() +
+  scale_color_manual(values = c("Down" = "blue", "No" = "grey", "Up" = "red")) +
+  geom_vline(xintercept = c(-1, 1), col = "black", linetype = "dashed") +
+  geom_hline(yintercept = -log10(0.05), col = "black", linetype = "dashed") +
+  geom_text_repel(data = top_genes, aes(label = gene_name), 
+                  size = 3, color = "black", fontface = "bold", max.overlaps = 30) +
+  labs(title = "Volcano Plot: Control vs mTOR Inhibition",
+       subtitle = "Highlighted: Top 10 most statistically significant genes",
+       x = "log2 Fold Change", 
+       y = "-log10 adjusted P-value",
+       color = "Significance") +
+  theme(legend.position = "right")
+
+ggsave(
+  filename = here("plots", "volcano_plot.png"), 
+  plot = volcano_p, 
+  width = 8, 
+  height = 7, 
+  dpi = 300
+)
+
+echo("Volcano plot successfully generated and saved to plots/volcano_plot.png")
