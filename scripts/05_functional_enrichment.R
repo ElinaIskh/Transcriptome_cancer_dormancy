@@ -50,18 +50,20 @@ get_clean_ensembl <- function(gene_ids) {
 de_genes_ensembl <- get_clean_ensembl(all_de_genes_df$gene_id)
 universe_genes_ensembl <- get_clean_ensembl(res_df$gene_id)
 
+up_genes_ensembl <- get_clean_ensembl(up_genes_df$gene_id)
+down_genes_ensembl <- get_clean_ensembl(down_genes_df$gene_id)
 
 # ==============================================================================
 # 4. Gene Ontology - GO Enrichment Analysis
 # ==============================================================================
 cat("[INFO] Running Gene Ontology (GO) enrichment analysis...\n")
 
-ego_bp <- enrichGO(
+ego_all <- enrichGO(
   gene          = de_genes_ensembl,
   universe      = universe_genes_ensembl,
   OrgDb         = org.Hs.eg.db,
   keyType       = "ENSEMBL",
-  ont           = "BP", # BP = Biological Process 
+  ont           = "ALL", # BP = Biological Process 
   pAdjustMethod = "BH",
   pvalueCutoff  = 0.05,
   qvalueCutoff  = 0.2,
@@ -69,15 +71,15 @@ ego_bp <- enrichGO(
 )
 
 # Save GO results as table
-if(!is.null(ego_bp) && nrow(ego_bp) > 0) {
-  write.table(as.data.frame(ego_bp), 
-              file = here("results", "differential_expression", "go_bp_enrichment_results.tsv"), 
+if(!is.null(ego_all) && nrow(ego_all) > 0) {
+  write.table(as.data.frame(ego_all), 
+              file = here("results", "differential_expression", "go_all_enrichment_results.tsv"), 
               sep = "\t", row.names = FALSE, quote = FALSE)
   
   # Visualise GO: Dotplot
-  go_dotplot <- dotplot(ego_bp, showCategory = 20) + 
-    labs(title = "GO Biological Process Enrichment")
-  ggsave(here("plots", "go_bp_dotplot.png"), plot = go_dotplot, width = 9, height = 8, dpi = 300)
+  go_dotplot <- dotplot(ego_all, showCategory = 20) + 
+    labs(title = "GO Enrichment")
+  ggsave(here("plots", "go_all_dotplot.png"), plot = go_dotplot, width = 9, height = 8, dpi = 300)
   
   # Visualise GO: cnetplot
   go_cnet <- cnetplot(ego_bp, showCategory = 5, foldChange = NULL) + 
@@ -86,6 +88,54 @@ if(!is.null(ego_bp) && nrow(ego_bp) > 0) {
 } else {
   cat("[WARNING] No significant GO terms found.\n")
 }
+
+# Upregulated genes
+ego_up <- enrichGO(
+  gene          = up_genes_ensembl,
+  universe      = universe_genes_ensembl,
+  OrgDb         = org.Hs.eg.db,
+  keyType       = "ENSEMBL",
+  ont           = "ALL", # BP = Biological Process 
+  pAdjustMethod = "BH",
+  pvalueCutoff  = 0.05,
+  qvalueCutoff  = 0.2,
+  readable      = TRUE  # Convert to Gene Symbols
+)
+
+# Save GO results as table
+if(!is.null(ego_up) && nrow(ego_up) > 0) {
+  write.table(as.data.frame(ego_up), 
+              file = here("results", "differential_expression", "go_up_enrichment_results.tsv"), 
+              sep = "\t", row.names = FALSE, quote = FALSE)
+  
+  # Visualise GO: Dotplot
+  go_dotplot <- dotplot(ego_up, showCategory = 10) + 
+    labs(title = "GO Enrichment")
+  ggsave(here("plots", "go_up_dotplot.png"), plot = go_dotplot, width = 9, height = 8, dpi = 300)
+
+# Downregulated genes
+ego_down <- enrichGO(
+  gene          = down_genes_ensembl,
+  universe      = universe_genes_ensembl,
+  OrgDb         = org.Hs.eg.db,
+  keyType       = "ENSEMBL",
+  ont           = "ALL", # BP = Biological Process 
+  pAdjustMethod = "BH",
+  pvalueCutoff  = 0.05,
+  qvalueCutoff  = 0.2,
+  readable      = TRUE  # Convert to Gene Symbols
+)
+
+# Save GO results as table
+if(!is.null(ego_down) && nrow(ego_down) > 0) {
+  write.table(as.data.frame(ego_down), 
+              file = here("results", "differential_expression", "go_down_enrichment_results.tsv"), 
+              sep = "\t", row.names = FALSE, quote = FALSE)
+  
+  # Visualise GO: Dotplot
+  go_dotplot <- dotplot(ego_down, showCategory = 10) + 
+    labs(title = "GO Enrichment")
+  ggsave(here("plots", "go_down_dotplot.png"), plot = go_dotplot, width = 9, height = 8, dpi = 300)
 
 
 # ==============================================================================
@@ -177,7 +227,7 @@ if(!is.null(gsea_hallmarks) && nrow(gsea_hallmarks) > 0) {
               file = here("results", "differential_expression", "gsea_hallmarks_results.tsv"), 
               sep = "\t", row.names = FALSE, quote = FALSE)
   
-  # --- Visualise GSEA results ---
+  # Visualise GSEA results
   
   # 1. Ridgeplot
   gsea_ridge <- ridgeplot(gsea_hallmarks, showCategory = 20) + 
