@@ -5,7 +5,7 @@
 #              expressed genes (DEGs) using clusterProfiler.
 # ==============================================================================
 
-# 1. Load Required Libraries
+# --- 1. Load Required Libraries ---
 library(clusterProfiler)
 library(org.Hs.eg.db)
 library(enrichplot)
@@ -20,7 +20,7 @@ if(!dir.exists(here("plots"))) dir.create(here("plots"), recursive = TRUE)
 
 cat("[INFO] Loading differential expression results...\n")
 
-# 2. Download differential expression results
+# --- 2. Download differential expression results ---
 deseq_results_path <- here("results", "differential_expression", "differential_expression_results.tsv")
 
 if(!file.exists(deseq_results_path)) {
@@ -29,7 +29,7 @@ if(!file.exists(deseq_results_path)) {
 
 res_df <- read.table(deseq_results_path, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
 
-# 3. Filter differential expressed genes
+# --- 3. Filter differential expressed genes ---
 # padj < 0.05 and |log2FC| > 1
 p_threshold <- 0.05
 lfc_threshold <- 1
@@ -53,9 +53,8 @@ universe_genes_ensembl <- get_clean_ensembl(res_df$gene_id)
 up_genes_ensembl <- get_clean_ensembl(up_genes_df$gene_id)
 down_genes_ensembl <- get_clean_ensembl(down_genes_df$gene_id)
 
-# ==============================================================================
-# 4. Gene Ontology - GO Enrichment Analysis
-# ==============================================================================
+
+# --- 4. Gene Ontology - GO Enrichment Analysis ---
 cat("[INFO] Running Gene Ontology (GO) enrichment analysis...\n")
 
 ego_all <- enrichGO(
@@ -138,9 +137,7 @@ if(!is.null(ego_down) && nrow(ego_down) > 0) {
   ggsave(here("plots", "go_down_dotplot.png"), plot = go_dotplot, width = 9, height = 8, dpi = 300)
 
 
-# ==============================================================================
-# 5. Signaling pathways analysis: KEGG
-# ==============================================================================
+# --- 5. Signaling pathways analysis: KEGG ---
 cat("[INFO] Running KEGG pathway enrichment analysis...\n")
 
 gene_conversion <- bitr(
@@ -184,9 +181,7 @@ if(!is.null(ekegg) && nrow(ekegg) > 0) {
 }
 
 
-# ==============================================================================
-# 6. Gene Set Enrichment Analysis (GSEA) - MSigDB Hallmarks
-# ==============================================================================
+# --- 6. Gene Set Enrichment Analysis (GSEA) - MSigDB Hallmarks ---
 cat("[INFO] Preparing data for GSEA...\n")
 
 res_df <- res_df %>% 
