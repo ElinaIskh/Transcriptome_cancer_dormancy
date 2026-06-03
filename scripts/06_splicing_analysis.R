@@ -6,7 +6,7 @@
 #              comparison with DESeq2 differential expression results.
 # ==============================================================================
 
-# 1. Load Required Libraries
+# --- 1. Load Required Libraries ---
 library(maser)
 library(clusterProfiler)
 library(org.Hs.eg.db)
@@ -21,7 +21,7 @@ mkdir_if_missing <- function(path) if(!dir.exists(path)) dir.create(path, recurs
 mkdir_if_missing(here("results", "alternative_splicing"))
 mkdir_if_missing(here("plots"))
 
-# 2. Import rMATS data through maser
+# --- 2. Import rMATS data through maser ---
 cat("[INFO] Importing rMATS results via maser...\n")
 rmats_path <- here("results", "rmats_output")
 
@@ -38,9 +38,7 @@ cat("[INFO] Significant splicing events identified:\n")
 print(m_sig)
 
 
-# ==============================================================================
-# 3. Visualisation of splicing quality (only SE type)
-# ==============================================================================
+# --- 3. Visualisation of splicing quality (only SE type) ---
 cat("[INFO] Generating diagnostic splicing plots...\n")
 
 # Save  diagnostic splicing plots
@@ -53,30 +51,25 @@ pca(m_sig, type = "SE")
 dev.off()
 
 
-# ==============================================================================
-# 4. Data filtration (Skipped vs Included)
-# ==============================================================================
+# --- 4. Data filtration (Skipped vs Included) ---
 cat("[INFO] Processing Skipped Exons (SE) details...\n")
 se_results <- summary(m_sig, type = "SE")
 
-# Проверка важного для проекта гена MTOR
 mtor_splicing <- se_results[se_results$geneSymbol == "MTOR", ]
 if(nrow(mtor_splicing) > 0) {
   cat("[INFO] Found alternative splicing events in MTOR gene!\n")
   write.table(mtor_splicing, file = here("results", "alternative_splicing", "mtor_splicing_events.tsv"), sep = "\t", row.names = FALSE)
 }
 
-# Сохранение полной таблицы значимых событий SE
+# Save full table of significant SEs
 write.csv(se_results, here("results", "alternative_splicing", "splicing_se_results.csv"), row.names = FALSE)
 
-# Разделение генов: где экзоны стали пропускаться (Delta PSI < -0.1) или включаться (Delta PSI > 0.1)
+# Divide genes: skopped - (Delta PSI < -0.1) or included - (Delta PSI > 0.1)
 down_genes <- unique(se_results$geneSymbol[se_results$IncLevelDifference < -0.1])
 up_genes <- unique(se_results$geneSymbol[se_results$IncLevelDifference > 0.1])
 
 
-# ==============================================================================
-# 5. Comparative functional analysis for splicing groups (GO and KEGG)
-# ==============================================================================
+# --- 5. Comparative functional analysis for splicing groups (GO and KEGG) ---
 cat("[INFO] Running comparative functional analysis for splicing groups...\n")
 
 # 5.1 Comparative GO (Biological Process)
@@ -98,8 +91,8 @@ if(!is.null(compare_splicing_go)) {
   ggsave(here("plots", "splicing_go_compare.png"), plot = splicing_go_plot, width = 9, height = 8, dpi = 300)
 }
 
-# 5.2 Сравнительный KEGG
-# Конвертируем Gene Symbols в Entrez ID для KEGG
+# 5.2 KEGG
+# COnvert Gene Symbols into Entrez ID for KEGG
 ids_list <- list(
   Skipped = bitr(down_genes, "SYMBOL", "ENTREZID", "org.Hs.eg.db", drop = TRUE)$ENTREZID,
   Included = bitr(up_genes, "SYMBOL", "ENTREZID", "org.Hs.eg.db", drop = TRUE)$ENTREZID
@@ -115,7 +108,7 @@ if(!is.null(compare_splicing_kegg)) {
   ggsave(here("plots", "splicing_kegg_compare.png"), plot = kegg_splicing_plot, width = 8, height = 6, dpi = 300)
 }
 
-# 5.3 Визуализация PSI для самого значимого гена
+# 5.3 PSI visualisation for the most significant genes
 if(nrow(se_results) > 0) {
   top_gene_name <- se_results$geneSymbol[which.min(se_results$PValue)]
   cat(paste("[INFO] Plotting PSI for top splicing gene:", top_gene_name, "\n"))
@@ -126,9 +119,7 @@ if(nrow(se_results) > 0) {
 }
 
 
-# ==============================================================================
-# 6. Integrative analysis: expression data (DESeq2) vs splicing (rMATS)
-# ==============================================================================
+# --- 6. Integrative analysis: expression data (DESeq2) vs splicing (rMATS) ---
 cat("[INFO] Integrating expression data with splicing networks...\n")
 
 deseq_path <- here("results", "alternative_splicing", "differential_expression_results.tsv")
@@ -136,7 +127,7 @@ deseq_path <- here("results", "alternative_splicing", "differential_expression_r
 if(!file.exists(deseq_path)) {
   cat("[WARNING] 'differential_expression_results.tsv' not found. Skipping integrative integration step.\n")
 } else {
-  # Dowload DESeq2
+  # Download DESeq2
   deseq_df <- read_delim(deseq_path, delim = "\t", show_col_types = FALSE)
   
   de_genes <- unique(deseq_df$gene_name[deseq_df$padj < 0.05 & abs(deseq_df$log2FoldChange) > 1])
@@ -157,7 +148,7 @@ if(!file.exists(deseq_path)) {
     Dual_Impact = intersect_genes
   )
   
-  # GO-анализ (Biological Process) between expression and splicing
+  # GO-analysis(Biological Process) between expression and splicing
   compare_go_integrative <- compareCluster(
     geneClusters = gene_clusters, 
     fun          = "enrichGO", 
