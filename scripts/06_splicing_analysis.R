@@ -122,7 +122,7 @@ if(nrow(se_results) > 0) {
 # --- 6. Integrative analysis: expression data (DESeq2) vs splicing (rMATS) ---
 cat("[INFO] Integrating expression data with splicing networks...\n")
 
-deseq_path <- here("results", "alternative_splicing", "differential_expression_results.tsv")
+deseq_path <- here("results", "differential_expression", "differential_expression_results.tsv")
 
 if(!file.exists(deseq_path)) {
   cat("[WARNING] 'differential_expression_results.tsv' not found. Skipping integrative integration step.\n")
