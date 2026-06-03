@@ -16,7 +16,7 @@ A well-established molecular feature of cancer dormancy across various malignanc
 
 Despite extensive research on mTOR inhibitors, global proteomic shifts and specific translational alterations in mTOR-deficient dormant cells remain largely unexplored. Furthermore, transcriptional changes alone cannot accurately predict phenotypic adaptation. To overcome this limitation, this project leverages an integrative multi-omics approach, combining RNA-Seq (transcriptomics) and Mass Spectrometry (proteomics) to provide a comprehensive, high-resolution map of the molecular landscape driving cancer cell dormancy.
 
-## Aim and oblectives
+## Aim and objectives
 **Aim**: To perform an integrative multi-omics analysis to elucidate the transcriptomic and proteomic landscape of cancer cells during the transition into dormancy induced by mTOR inhibition.
 
 **Objectives**:
@@ -41,7 +41,7 @@ Despite extensive research on mTOR inhibitors, global proteomic shifts and speci
 ├── results/                   <- Processed data matrices and outcomes
 │   ├── rmats/                     <- Alternative splicing events 
 │   ├── differential_expression/   <- DESeq2 output data
-|   └── proteom                    <- Mass-spectrometry and proteom analysis data
+|   └── proteome                    <- Mass-spectrometry and proteom analysis data
 └── plots/                     <- All key figures
 ```
 
@@ -93,6 +93,12 @@ conda create -n cancer_dormancy python=3.12 -y
 conda activate cancer_dormancy
 conda install -c bioconda rmats hisat2 samtools fastqc fastp -y
 ```
+
+### Hardware Requirements
+The full workflow was executed using the following infrastructure:
+* **CPU**: 16 cores
+* **RAM**: 8 GB
+* **Disk Space**: 130 GB 
 
 ### Running the Upstream Pipelines
 1. Place your raw paired-end sequencing reads into a `raw_data/` folder.

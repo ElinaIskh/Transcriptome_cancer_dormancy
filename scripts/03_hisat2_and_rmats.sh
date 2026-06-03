@@ -60,8 +60,7 @@ for r1 in "$TRIMMED_DIR"/*_trimmed_R1.fastq.gz; do
     r2="${r1/_trimmed_R1.fastq.gz/_trimmed_R2.fastq.gz}"
     base_name=$(basename "$r1" _trimmed_R1.fastq.gz)
     
-    # Очищаем имя от лишних технических суффиксов, если они есть
-    # Например, приводим S_1_EKDL... к чистому A549_cntrl / A549_exp
+    # Make name without suffixes
     sample_id=$(echo "$base_name" | awk -F'_' '{print $1"_"$2}')
     
     echo "Processing alignment for sample: $sample_id"
