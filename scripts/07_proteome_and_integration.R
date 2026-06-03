@@ -23,9 +23,8 @@ mkdir_if_missing(here("plots"))
 # Normalisation function
 normalize_counts <- function(x) { (x / sum(x, na.rm = TRUE)) * 1e6 }
 
-# ==============================================================================
-# 1. Dowload and preprocessing of mass-spectrometry data
-# ==============================================================================
+
+# --- 1. Dowload and preprocessing of mass-spectrometry data ---
 cat("[INFO] Loading and preprocessing proteomic data...\n")
 
 # Download data
@@ -62,16 +61,14 @@ dea_results_nucl <- nucl_raw %>%
     lfc_3w = log2((nucl_3w + 1) / (nucl_ctrl + 1))
   )
 
-# ==============================================================================
-# 2. Dowload transcriptome data and integration
-# ==============================================================================
+# --- 2. Dowload transcriptome data and integration ---
 cat("[INFO] Integrating with RNA-Seq results...\n")
 
 rna_path <- here("results", "differential_expression", "differential_expression_results.tsv")
 if(!file.exists(rna_path)) stop("Error: Run script 04 (DESeq2) first!")
 rna_df <- read.table(rna_path, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
 
-# Функция для интеграции конкретной фракции протеома с РНК
+# --- 3. Proteome fruction and RNA integration ---
 integrate_omics <- function(prot_df, fraction_name) {
   inner_join(
     rna_df %>% dplyr::select(Gene = gene_name, log2FC_RNA = log2FoldChange, padj_RNA = padj),
@@ -88,9 +85,7 @@ write.table(all_integrated, here("results", "proteom", "transcriptome_proteome_t
             sep = "\t", row.names = FALSE, quote = FALSE)
 
 
-# ==============================================================================
-# 4. Visualisation: Multi-quadrant graph
-# ==============================================================================
+# --- 4. Visualisation: Multi-quadrant graph ---
 cat("[INFO] Generating cross-omics scatter plots...\n")
 
 plt_df <- integrated_cyt %>%
@@ -114,9 +109,8 @@ scatter_p <- ggplot(plt_df, aes(x = log2FC_RNA, y = lfc_3w, color = Group)) +
 
 ggsave(here("plots", "rna_vs_protein_week3_cyt.png"), plot = scatter_p, width = 7, height = 6, dpi = 300)
 
-# ==============================================================================
-# 5. ComplexHeatmap
-# ==============================================================================
+
+# --- 5. ComplexHeatmap ---
 cat("[INFO] Building multi-week ComplexHeatmap...\n")
 
 heatmap_subset <- integrated_cyt %>%
