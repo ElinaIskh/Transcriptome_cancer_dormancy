@@ -94,6 +94,12 @@ conda activate cancer_dormancy
 conda install -c bioconda rmats hisat2 samtools fastqc fastp -y
 ```
 
+### Hardware Requirements
+The full workflow was executed using the following infrastructure:
+* **CPU**: 16 cores
+* **RAM**: 8 GB
+* **Disk Space**: 130 GB 
+
 ### Running the Upstream Pipelines
 1. Place your raw paired-end sequencing reads into a `raw_data/` folder.
 2. Execute the bash pipelines sequentially:
