@@ -7,7 +7,7 @@
 # ==============================================================================
 
 
-# 1. Load Required Libraries
+# --- 1. Load Required Libraries ---
 library(rtracklayer)
 library(tximport)
 library(DESeq2)
@@ -23,7 +23,7 @@ mkdir_if_missing(here("results", "differential_expression"))
 mkdir_if_missing(here("plots"))
 
 
-# 2. Experimental Design Setup
+# --- 2. Experimental Design Setup ---
 samples <- c("A549_cntrl", "A549_exp", "T98G_cntrl", "T98G_exp", "PA1_cntrl", "PA1_exp")
 condition <- factor(c("control", "treated", "control", "treated", "control", "treated"))
 cell_line <- factor(c("A549", "A549", "T98G", "T98G", "PA1", "PA1"))
@@ -34,7 +34,7 @@ colData_cell <- data.frame(
   condition = condition
 )
 
-# 3. Dynamic Path Construction for Kallisto Abundance Files
+# --- 3. Dynamic Path Construction for Kallisto Abundance Files ---
 # Looks for results/kallisto_output/[sample_name]/abundance.h5
 files <- here("results", "kallisto_output", samples, "abundance.h5")
 names(files) <- samples
@@ -44,7 +44,7 @@ if(!all(file.exists(files))) {
 }
 
 
-# 4. Import Transcriptome Annotation & Build tx2gene Map
+# --- 4. Import Transcriptome Annotation & Build tx2gene Map ---
 gtf_path <- here("reference", "gencode.v44.annotation.gtf")
 if(!file.exists(gtf_path)) {
   stop("Error: Annotation file 'gencode.v44.annotation.gtf' not found in 'reference/' directory!")
@@ -60,7 +60,7 @@ tx2gene <- unique(data.frame(
 ))
 
 
-# 5. Data Import via tximport
+# --- 5. Data Import via tximport ---
 echo("Importing Kallisto quantification data...")
 txi <- tximport(files, type = "kallisto", tx2gene = tx2gene, ignoreAfterBar = TRUE)
 
@@ -68,7 +68,7 @@ txi <- tximport(files, type = "kallisto", tx2gene = tx2gene, ignoreAfterBar = TR
 echo(paste("Imported counts matrix shape:", paste(dim(txi$counts), collapse = "x")))
 
 
-# 6. DESeq2 Analysis (Controlling for Cell Line Batch Effect)
+# --- 6. DESeq2 Analysis (Controlling for Cell Line Batch Effect) ---
 echo("Initializing DESeq2 analysis...")
 dds_cell <- DESeqDataSetFromTximport(
   txi,
@@ -83,7 +83,7 @@ dds_cell$condition <- relevel(dds_cell$condition, ref = "control")
 dds_cell <- DESeq(dds_cell)
 
 
-# 7. Quality Control & Data Visualization
+# --- 7. Quality Control & Data Visualization ---
 echo("Performing Variance Stabilizing Transformation (VST)...")
 vsd_cell <- vst(dds_cell, blind = FALSE)
 
@@ -120,7 +120,7 @@ pheatmap(
 dev.off()
 
 
-# 8. Results Extraction and Gene Annotation
+# --- 8. Results Extraction and Gene Annotation ---
 echo("Extracting and annotating results...")
 res <- results(dds_cell)
 
@@ -148,7 +148,7 @@ write.table(res_annot, file = output_table_path, sep = "\t", row.names = FALSE, 
 echo(paste("Analysis complete! Annotated results saved to:", output_table_path))
 
 
-# 9 Volcano Plot Generation
+# --- 9. Volcano Plot Generation ---
 echo("Generating Volcano Plot...")
 
 # Count status of diff expression based on log2FoldChange and padj
